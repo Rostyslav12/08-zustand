@@ -1,15 +1,16 @@
+
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
-import { useRouter } from "next/navigation";
 
-import type { Note } from "../../../../types/note";
+import type { Note } from "@/types/note";
+import { deleteNote, fetchNotes } from "@/lib/api/api";
 
 import css from "./Notes.client.module.css";
-import { deleteNote, fetchNotes } from "@/lib/api/api";
 
 interface NotesClientProps {
   tag: string;
@@ -19,10 +20,13 @@ interface NotesClientProps {
 
 const PER_PAGE = 12;
 
-export default function NotesClient({ tag, page, search }: NotesClientProps) {
+export default function NotesClient({
+  tag,
+  page,
+  search,
+}: NotesClientProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
-
   const [searchValue, setSearchValue] = useState(search);
 
   const debouncedSearch = useDebouncedCallback((value: string) => {
@@ -50,8 +54,10 @@ export default function NotesClient({ tag, page, search }: NotesClientProps) {
       }),
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: deleteNote,
+  const deleteMutation = useMutation<void, Error, string>({
+    mutationFn: async (id: string) => {
+      await deleteNote(id);
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["notes"] });
     },
@@ -85,7 +91,7 @@ export default function NotesClient({ tag, page, search }: NotesClientProps) {
   }
 
   const notes: Note[] = data.notes;
-  const totalPages = Math.ceil(data.total / PER_PAGE);
+  const totalPages = data.totalPages;
 
   return (
     <section className={css.container}>
@@ -112,13 +118,14 @@ export default function NotesClient({ tag, page, search }: NotesClientProps) {
             <li key={note.id} className={css.noteItem}>
               <article className={css.noteCard}>
                 <h2 className={css.noteTitle}>{note.title}</h2>
-
                 <p className={css.noteContent}>{note.content}</p>
-
                 <p className={css.noteTag}>Tag: {note.tag}</p>
 
                 <div className={css.noteActions}>
-                  <Link href={`/notes/${note.id}`} className={css.detailsLink}>
+                  <Link
+                    href={`/notes/${note.id}`}
+                    className={css.detailsLink}
+                  >
                     View details
                   </Link>
 
@@ -136,7 +143,7 @@ export default function NotesClient({ tag, page, search }: NotesClientProps) {
                       }
                     }}
                   >
-                    Delete
+                    {deleteMutation.isPending ? "Deleting..." : "Delete"}
                   </button>
                 </div>
               </article>
@@ -145,7 +152,9 @@ export default function NotesClient({ tag, page, search }: NotesClientProps) {
         </ul>
       )}
 
-      {deleteMutation.isError && <p role="alert">Failed to delete the note.</p>}
+      {deleteMutation.isError && (
+        <p role="alert">Failed to delete the note.</p>
+      )}
 
       {totalPages > 1 && (
         <nav className={css.pagination} aria-label="Notes pagination">

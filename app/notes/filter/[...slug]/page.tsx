@@ -1,31 +1,42 @@
+
 import {
   dehydrate,
   HydrationBoundary,
   QueryClient,
 } from "@tanstack/react-query";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { fetchNotes } from "@/lib/api/api";
 import NotesClient from "./Notes.client";
 
-import type { Metadata } from "next";
-import { fetchNotes } from "@/lib/api/api";
-
 const allowedTags = ["Todo", "Work", "Personal", "Meeting", "Shopping"];
+const PER_PAGE = 12;
+
+interface NotesPageProps {
+  params: Promise<{ slug: string[] }>;
+  searchParams: Promise<{
+    page?: string;
+    search?: string;
+  }>;
+}
+
+function getTag(requestedTag: string): string | undefined {
+  if (requestedTag.toLowerCase() === "all") {
+    return "all";
+  }
+
+  return allowedTags.find(
+    (tag) => tag.toLowerCase() === requestedTag.toLowerCase()
+  );
+}
 
 export async function generateMetadata({
   params,
-}: {
-  params: Promise<{ slug: string[] }>;
-}): Promise<Metadata> {
+}: Pick<NotesPageProps, "params">): Promise<Metadata> {
   const { slug } = await params;
   const requestedTag = slug[0] ?? "all";
-
-  const tag =
-    requestedTag.toLowerCase() === "all"
-      ? "all"
-      : allowedTags.find(
-          (item) => item.toLowerCase() === requestedTag.toLowerCase()
-        );
+  const tag = getTag(requestedTag);
 
   if (!tag || slug.length !== 1) {
     return {
@@ -34,9 +45,7 @@ export async function generateMetadata({
     };
   }
 
-  const title =
-    tag === "all" ? "All notes | NoteHub" : `${tag} notes | NoteHub`;
-
+  const title = tag === "all" ? "All notes | NoteHub" : `${tag} notes | NoteHub`;
   const description =
     tag === "all"
       ? "Browse and manage all your notes in NoteHub."
@@ -54,56 +63,51 @@ export async function generateMetadata({
           url: "https://ac.goit.global/fullstack/react/notehub-og-meta.jpg",
           width: 1200,
           height: 630,
-          alt: `NoteHub — ${tag} notes`,
+          alt: `NoteHub - ${tag} notes`,
         },
       ],
     },
   };
 }
 
-interface NotesPageProps {
-  params: Promise<{ slug: string[] }>;
-}
-
-export default async function NotesPage({ params }: NotesPageProps) {
+export default async function NotesPage({
+  params,
+  searchParams,
+}: NotesPageProps) {
   const { slug } = await params;
+  const query = await searchParams;
 
-  if (slug.length !== 1) {
+  if (slug.length !== 1 || !slug[0]) {
     notFound();
   }
 
-  const requestedTag = slug[0];
-
-  if (!requestedTag) {
-    notFound();
-  }
-
-  const tag =
-    requestedTag.toLowerCase() === "all"
-      ? "all"
-      : allowedTags.find(
-          (item) => item.toLowerCase() === requestedTag.toLowerCase()
-        );
+  const tag = getTag(slug[0]);
 
   if (!tag) {
     notFound();
   }
 
+  const parsedPage = Number(query.page ?? "1");
+  const page =
+    Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  const search = query.search?.trim() ?? "";
+
   const queryClient = new QueryClient();
 
   await queryClient.prefetchQuery({
-    queryKey: ["notes", { page: 1, search: "", tag }],
+    queryKey: ["notes", tag, page, search],
     queryFn: () =>
       fetchNotes({
-        page: 1,
-        perPage: 12,
-        tag,
+        page,
+        perPage: PER_PAGE,
+        search,
+        tag: tag === "all" ? undefined : tag,
       }),
   });
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <NotesClient tag={tag} />
+      <NotesClient tag={tag} page={page} search={search} />
     </HydrationBoundary>
   );
 }

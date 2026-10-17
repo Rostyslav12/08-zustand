@@ -1,5 +1,9 @@
-import { fetchNoteById } from "@/lib/api/api";
+
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+
+import { fetchNoteById } from "@/lib/api/api";
+import NoteDetails from "./NoteDetails.client";
 
 interface NotePageProps {
   params: Promise<{ id: string }>;
@@ -12,7 +16,6 @@ export async function generateMetadata({
 
   try {
     const note = await fetchNoteById(id);
-
     const title = `${note.title} | NoteHub`;
     const description = note.content
       ? note.content.slice(0, 160)
@@ -40,5 +43,17 @@ export async function generateMetadata({
       title: "Note not found | NoteHub",
       description: "The requested note could not be found in NoteHub.",
     };
+  }
+}
+
+export default async function NotePage({ params }: NotePageProps) {
+  const { id } = await params;
+
+  try {
+    const note = await fetchNoteById(id);
+
+    return <NoteDetails note={note} />;
+  } catch {
+    notFound();
   }
 }

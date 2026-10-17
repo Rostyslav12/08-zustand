@@ -5,7 +5,7 @@ import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 import Modal from "../../../../components/Modal/Modal";
-import { fetchNoteById } from "../../../../lib/api";
+import { fetchNoteById } from "@/lib/api/api";
 
 interface NotePreviewProps {
   id: string;
