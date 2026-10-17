@@ -1,4 +1,3 @@
-
 import {
   dehydrate,
   HydrationBoundary,
@@ -7,7 +6,7 @@ import {
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { fetchNotes } from "@/lib/api/api";
+import { fetchNotes } from "@/lib/api";
 import NotesClient from "./Notes.client";
 
 const allowedTags = ["Todo", "Work", "Personal", "Meeting", "Shopping"];
@@ -45,7 +44,8 @@ export async function generateMetadata({
     };
   }
 
-  const title = tag === "all" ? "All notes | NoteHub" : `${tag} notes | NoteHub`;
+  const title =
+    tag === "all" ? "All notes | NoteHub" : `${tag} notes | NoteHub`;
   const description =
     tag === "all"
       ? "Browse and manage all your notes in NoteHub."
@@ -88,8 +88,7 @@ export default async function NotesPage({
   }
 
   const parsedPage = Number(query.page ?? "1");
-  const page =
-    Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  const page = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
   const search = query.search?.trim() ?? "";
 
   const queryClient = new QueryClient();

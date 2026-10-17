@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -7,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
 
+import { deleteNote, fetchNotes } from "@/lib/api";
 import type { Note } from "@/types/note";
-import { deleteNote, fetchNotes } from "@/lib/api/api";
 
 import css from "./Notes.client.module.css";
 
@@ -20,11 +19,7 @@ interface NotesClientProps {
 
 const PER_PAGE = 12;
 
-export default function NotesClient({
-  tag,
-  page,
-  search,
-}: NotesClientProps) {
+export default function NotesClient({ tag, page, search }: NotesClientProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [searchValue, setSearchValue] = useState(search);
@@ -122,10 +117,7 @@ export default function NotesClient({
                 <p className={css.noteTag}>Tag: {note.tag}</p>
 
                 <div className={css.noteActions}>
-                  <Link
-                    href={`/notes/${note.id}`}
-                    className={css.detailsLink}
-                  >
+                  <Link href={`/notes/${note.id}`} className={css.detailsLink}>
                     View details
                   </Link>
 
@@ -152,9 +144,7 @@ export default function NotesClient({
         </ul>
       )}
 
-      {deleteMutation.isError && (
-        <p role="alert">Failed to delete the note.</p>
-      )}
+      {deleteMutation.isError && <p role="alert">Failed to delete the note.</p>}
 
       {totalPages > 1 && (
         <nav className={css.pagination} aria-label="Notes pagination">

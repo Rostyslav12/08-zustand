@@ -7,8 +7,8 @@ import { useEffect, useState } from "react";
 import { useNoteStore } from "../../lib/store/noteStore";
 import type { CreateNoteData } from "../../types/note";
 
+import { createNote } from "@/lib/api";
 import css from "./NoteForm.module.css";
-import { createNote } from "@/lib/api/api";
 
 export default function NoteForm() {
   const router = useRouter();

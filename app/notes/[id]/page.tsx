@@ -1,8 +1,7 @@
-
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { fetchNoteById } from "@/lib/api/api";
+import { fetchNoteById } from "@/lib/api";
 import NoteDetails from "./NoteDetails.client";
 
 interface NotePageProps {

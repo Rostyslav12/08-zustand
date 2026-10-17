@@ -1,11 +1,11 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useCallback } from "react";
 
+import { fetchNoteById } from "@/lib/api";
 import Modal from "../../../../components/Modal/Modal";
-import { fetchNoteById } from "@/lib/api/api";
 
 interface NotePreviewProps {
   id: string;
