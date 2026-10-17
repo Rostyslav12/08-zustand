@@ -1,23 +1,44 @@
+import { fetchNoteById } from "@/lib/api/api";
+import type { Metadata } from "next";
 
-import { notFound } from "next/navigation";
-
-import { fetchNoteById } from "../../../lib/api";
-import NoteDetails from "./NoteDetails.client";
-
-interface NoteDetailsPageProps {
+interface NotePageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function NoteDetailsPage({
+export async function generateMetadata({
   params,
-}: NoteDetailsPageProps) {
+}: NotePageProps): Promise<Metadata> {
   const { id } = await params;
 
   try {
     const note = await fetchNoteById(id);
 
-    return <NoteDetails note={note} />;
+    const title = `${note.title} | NoteHub`;
+    const description = note.content
+      ? note.content.slice(0, 160)
+      : `View and manage the note "${note.title}" in NoteHub.`;
+
+    return {
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        url: `https://notehub.com/notes/${encodeURIComponent(id)}`,
+        images: [
+          {
+            url: "https://ac.goit.global/fullstack/react/notehub-og-meta.jpg",
+            width: 1200,
+            height: 630,
+            alt: `NoteHub note: ${note.title}`,
+          },
+        ],
+      },
+    };
   } catch {
-    notFound();
+    return {
+      title: "Note not found | NoteHub",
+      description: "The requested note could not be found in NoteHub.",
+    };
   }
 }

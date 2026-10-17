@@ -50,10 +50,7 @@ export default function NoteList({ notes }: NoteListProps) {
           </p>
 
           <div className={css.actions}>
-            <Link
-              className={css.link}
-              href={`/notes/${note.id}`}
-            >
+            <Link className={css.link} href={`/notes/${note.id}`}>
               View details
             </Link>
 

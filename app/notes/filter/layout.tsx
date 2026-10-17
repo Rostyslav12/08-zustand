@@ -1,4 +1,3 @@
-
 import styles from "./layout.module.css";
 
 interface FilterLayoutProps {
@@ -6,10 +5,7 @@ interface FilterLayoutProps {
   sidebar: React.ReactNode;
 }
 
-export default function FilterLayout({
-  children,
-  sidebar,
-}: FilterLayoutProps) {
+export default function FilterLayout({ children, sidebar }: FilterLayoutProps) {
   return (
     <div className={styles.layout}>
       {sidebar}

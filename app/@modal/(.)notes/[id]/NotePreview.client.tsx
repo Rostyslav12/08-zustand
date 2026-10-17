@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
@@ -19,7 +18,11 @@ export default function NotePreview({ id }: NotePreviewProps) {
     router.back();
   }, [router]);
 
-  const { data: note, isPending, isError } = useQuery({
+  const {
+    data: note,
+    isPending,
+    isError,
+  } = useQuery({
     queryKey: ["note", id],
     queryFn: () => fetchNoteById(id),
     refetchOnMount: false,
@@ -29,9 +32,7 @@ export default function NotePreview({ id }: NotePreviewProps) {
     <Modal onClose={handleClose}>
       {isPending && <p>Loading note...</p>}
 
-      {isError && (
-        <p role="alert">Failed to load note details.</p>
-      )}
+      {isError && <p role="alert">Failed to load note details.</p>}
 
       {note && (
         <article>

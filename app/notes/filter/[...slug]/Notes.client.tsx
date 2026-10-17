@@ -1,106 +1,174 @@
-
 "use client";
 
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
+import { useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-import Modal from "../../../../components/Modal/Modal";
-import NoteForm from "../../../../components/NoteForm/NoteForm";
-import NoteList from "../../../../components/NoteList/NoteList";
-import Pagination from "../../../../components/Pagination/Pagination";
-import SearchBox from "../../../../components/SearchBox/SearchBox";
-import { fetchNotes } from "../../../../lib/api";
+import type { Note } from "../../../../types/note";
 
-import styles from "./Notes.module.css";
+import css from "./Notes.client.module.css";
+import { deleteNote, fetchNotes } from "@/lib/api/api";
 
 interface NotesClientProps {
   tag: string;
+  page: number;
+  search: string;
 }
 
 const PER_PAGE = 12;
 
-export default function NotesClient({ tag }: NotesClientProps) {
-  const [page, setPage] = useState(1);
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
-  const [isFormOpen, setIsFormOpen] = useState(false);
+export default function NotesClient({ tag, page, search }: NotesClientProps) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const [searchValue, setSearchValue] = useState(search);
 
   const debouncedSearch = useDebouncedCallback((value: string) => {
-    setSearch(value.trim());
-    setPage(1);
-  }, 400);
+    const params = new URLSearchParams();
 
-  useEffect(() => {
-    setPage(1);
-  }, [tag]);
+    if (value.trim()) {
+      params.set("search", value.trim());
+    }
 
-  const { data, isPending, isError, error } = useQuery({
-    queryKey: ["notes", { page, search, tag }],
+    params.set("page", "1");
+
+    router.push(
+      `/notes/filter/${encodeURIComponent(tag)}?${params.toString()}`
+    );
+  }, 500);
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["notes", tag, page, search],
     queryFn: () =>
       fetchNotes({
         page,
         perPage: PER_PAGE,
         search,
-        tag,
+        tag: tag === "all" ? undefined : tag,
       }),
-    placeholderData: keepPreviousData,
   });
 
-  const handleSearchChange = (value: string) => {
-    setSearchInput(value);
+  const deleteMutation = useMutation({
+    mutationFn: deleteNote,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["notes"] });
+    },
+  });
+
+  function handleSearch(value: string) {
+    setSearchValue(value);
     debouncedSearch(value);
-  };
+  }
+
+  function handlePageChange(nextPage: number) {
+    const params = new URLSearchParams();
+
+    if (search) {
+      params.set("search", search);
+    }
+
+    params.set("page", String(nextPage));
+
+    router.push(
+      `/notes/filter/${encodeURIComponent(tag)}?${params.toString()}`
+    );
+  }
+
+  if (isLoading) {
+    return <p>Loading notes...</p>;
+  }
+
+  if (isError || !data) {
+    return <p>Failed to load notes. Please try again.</p>;
+  }
+
+  const notes: Note[] = data.notes;
+  const totalPages = Math.ceil(data.total / PER_PAGE);
 
   return (
-    <section className={styles.container}>
-      <div className={styles.toolbar}>
-        <h1 className={styles.title}>
-          {tag === "all" ? "All notes" : `${tag} notes`}
-        </h1>
-
-        <button
-          className={styles.createButton}
-          type="button"
-          onClick={() => setIsFormOpen(true)}
-        >
-          Create note +
-        </button>
-      </div>
-
-      <div className={styles.search}>
-        <SearchBox
-          value={searchInput}
-          onChange={handleSearchChange}
+    <section className={css.container}>
+      <div className={css.toolbar}>
+        <input
+          type="search"
+          value={searchValue}
+          onChange={(event) => handleSearch(event.target.value)}
+          placeholder="Search notes..."
+          aria-label="Search notes"
+          className={css.searchInput}
         />
+
+        <Link href="/notes/action/create" className={css.createButton}>
+          Create note +
+        </Link>
       </div>
 
-      {isPending && <p>Loading notes...</p>}
+      {notes.length === 0 ? (
+        <p>No notes found.</p>
+      ) : (
+        <ul className={css.noteList}>
+          {notes.map((note) => (
+            <li key={note.id} className={css.noteItem}>
+              <article className={css.noteCard}>
+                <h2 className={css.noteTitle}>{note.title}</h2>
 
-      {isError && (
-        <p role="alert">
-          Failed to load notes: {error.message}
-        </p>
+                <p className={css.noteContent}>{note.content}</p>
+
+                <p className={css.noteTag}>Tag: {note.tag}</p>
+
+                <div className={css.noteActions}>
+                  <Link href={`/notes/${note.id}`} className={css.detailsLink}>
+                    View details
+                  </Link>
+
+                  <button
+                    type="button"
+                    className={css.deleteButton}
+                    disabled={deleteMutation.isPending}
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          "Are you sure you want to delete this note?"
+                        )
+                      ) {
+                        deleteMutation.mutate(note.id);
+                      }
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </article>
+            </li>
+          ))}
+        </ul>
       )}
 
-      {data && (
-        <>
-          <NoteList notes={data.notes} />
+      {deleteMutation.isError && <p role="alert">Failed to delete the note.</p>}
 
-          {data.totalPages > 1 && (
-            <Pagination
-              page={page}
-              totalPages={data.totalPages}
-              onPageChange={setPage}
-            />
-          )}
-        </>
-      )}
+      {totalPages > 1 && (
+        <nav className={css.pagination} aria-label="Notes pagination">
+          <button
+            type="button"
+            disabled={page <= 1}
+            onClick={() => handlePageChange(page - 1)}
+          >
+            Previous
+          </button>
 
-      {isFormOpen && (
-        <Modal onClose={() => setIsFormOpen(false)}>
-          <NoteForm onClose={() => setIsFormOpen(false)} />
-        </Modal>
+          <span>
+            Page {page} of {totalPages}
+          </span>
+
+          <button
+            type="button"
+            disabled={page >= totalPages}
+            onClick={() => handlePageChange(page + 1)}
+          >
+            Next
+          </button>
+        </nav>
       )}
     </section>
   );

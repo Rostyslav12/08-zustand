@@ -1,4 +1,3 @@
-
 "use client";
 
 interface NotesErrorProps {
@@ -6,10 +5,7 @@ interface NotesErrorProps {
   reset: () => void;
 }
 
-export default function NotesError({
-  error,
-  reset,
-}: NotesErrorProps) {
+export default function NotesError({ error, reset }: NotesErrorProps) {
   return (
     <div role="alert">
       <h2>Something went wrong while loading notes.</h2>

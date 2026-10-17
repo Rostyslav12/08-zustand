@@ -15,11 +15,7 @@ export default function Pagination({
   totalPages,
   onPageChange,
 }: PaginationProps) {
-  const handlePageChange = ({
-    selected,
-  }: {
-    selected: number;
-  }) => {
+  const handlePageChange = ({ selected }: { selected: number }) => {
     onPageChange(selected + 1);
   };
 

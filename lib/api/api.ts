@@ -1,4 +1,3 @@
-
 import axios from "axios";
 
 import type { CreateNoteData, Note } from "../types/note";

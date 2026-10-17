@@ -10,10 +10,7 @@ interface ModalProps {
   onClose: () => void;
 }
 
-export default function Modal({
-  children,
-  onClose,
-}: ModalProps) {
+export default function Modal({ children, onClose }: ModalProps) {
   const backdropRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -33,9 +30,7 @@ export default function Modal({
     };
   }, [onClose]);
 
-  const handleBackdropClick = (
-    event: React.MouseEvent<HTMLDivElement>,
-  ) => {
+  const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.target === backdropRef.current) {
       onClose();
     }
@@ -47,10 +42,8 @@ export default function Modal({
       className={styles.backdrop}
       onClick={handleBackdropClick}
     >
-      <div className={styles.modal}>
-        {children}
-      </div>
+      <div className={styles.modal}>{children}</div>
     </div>,
-    document.body,
+    document.body
   );
 }

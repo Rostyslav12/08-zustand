@@ -1,4 +1,3 @@
-
 import Link from "next/link";
 
 import styles from "./Sidebar.module.css";
@@ -20,10 +19,7 @@ export default function Sidebar() {
 
           {tags.map((tag) => (
             <li key={tag}>
-              <Link
-                className={styles.link}
-                href={`/notes/filter/${tag}`}
-              >
+              <Link className={styles.link} href={`/notes/filter/${tag}`}>
                 {tag}
               </Link>
             </li>
